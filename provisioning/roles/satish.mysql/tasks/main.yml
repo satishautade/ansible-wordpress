@@ -1,0 +1,37 @@
+---
+# tasks file for satish.mysql
+
+   - name: Install MYSQL
+     apt: name={{item}} state=installed
+     with_items:
+      - mysql-server-5.6
+      - python-mysqldb
+
+   - name: Generate the Mysql password
+     command: openssl rand -hex 7 creates=/root/.my.cnf
+     register: new_password_mysql_root
+
+   - name: Remove anonymous users
+     mysql_user: name='' host_all=yes state=absent
+     when: new_password_mysql_root.changed
+   
+   - name: Remove test databases
+     mysql_db: name=test state=absent
+     when: new_password_mysql_root.changed
+
+   - name: Change the root password
+     mysql_user: name=root  host={{item}} password={{new_password_mysql_root.stdout}}
+     with_items:
+      - "{{ ansible_hostname }}"
+      - 127.0.0.1
+      - ::1
+      - localhost
+     when: new_password_mysql_root.changed
+
+   - name: Output root password
+     debug: msg="New root password is {{ new_password_mysql_root.stdout }}"
+     when: new_password_mysql_root.changed
+
+   - name: Copy the my.conf file
+     template: src=my.cnf dest=/root/.my.cnf
+     when: new_password_mysql_root.changed

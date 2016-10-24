@@ -1,0 +1,19 @@
+
+# tasks file for satish.php
+
+   - name: Add PHP 7 ppa
+     apt_repository: repo='ppa:ondrej/php'
+
+   - name: Update the Apt Cache
+     apt: update_cache=yes cache_valid_time=3600
+
+   - name: Install all the required php packages
+     apt: name="{{item}}" state=installed
+     with_items:
+      - php
+      - php-fpm
+      - php-mysql
+      - php-xml
+
+   - name: Remove Apache-2 installed with PHP 7
+     apt: name=apache2 state=removed

@@ -1,0 +1,6 @@
+---
+# tasks file for satish.common
+ - name: Install Reuired tools
+   apt: name={{item}} state=installed
+   with_items:
+    - unzip

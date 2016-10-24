@@ -1,0 +1,33 @@
+---
+# tasks file for satish.wordpress
+ - name: Unzip WordPress
+   unarchive: src=wordpress.zip dest=/tmp  creates=/tmp/wordpress/wp-settings.php
+
+ - name: Create project Folder
+   file: dest=/var/www/book.example.com state=directory
+
+ - name: Copy Wordpress files into project
+   command: cp -a /tmp/wordpress/. /var/www/book.example.com creates=/var/www/book.example.com/wp-settings.php
+
+ - name: Create Wordpress mysql DB
+   mysql_db: name=wordpress state=present
+
+ - name: Create Wordpress mysql User
+   mysql_user: name=wordpress host=localhost password=bananas  priv=wordpress.*:ALL state=present
+
+ - name: Create wp-config.php
+   template: src=wp-config.php dest=/var/www/book.example.com/wp-config.php 
+
+ - name: Does wordpress DB exists?
+   command: mysql -u root wordpress -e "SELECT ID FROM wordpress.wp_users LIMIT 1;"
+   register: db_exist
+   ignore_errors: true
+   changed_when: false
+
+ - name: Copy database backup file
+   copy: src=wp-database.sql dest=/tmp/wp-database.sql
+   when: db_exist.rc > 0
+
+ - name: Restore the DB snapshot
+   mysql_db: target=/tmp/wp-database.sql state=import name=wordpress
+   when: db_exist.rc > 0
